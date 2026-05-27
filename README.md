@@ -1,6 +1,6 @@
 # WhyCode Detection & Triangulation Benchmark
 
-This repository contains the development environment for the **WhyCode Detection & Triangulation Benchmark**. It packages the main marker detection logic (`whycode_vision`) and the simulation environment (`whycode_sim`) into a Docker Compose runtime environment optimized for ROS 2.
+This repository contains the development environment for the **WhyCode Detection & Triangulation Benchmark**. It packages the main marker detection logic ([whycode_vision](https://github.com/Adyansh04/whycode)) and the simulation environment ([whycode_sim](https://github.com/Adyansh04/whycode-sim)) into a Docker Compose runtime environment optimized for ROS 2.
 
 - **Docker Compose** is the runtime source of truth.
 - **`.devcontainer/devcontainer.json`** provides VS Code integration for developer workspace containment.
@@ -35,14 +35,6 @@ cd workspace/src
 vcs pull
 cd ../..
 ```
-
-### 3. Setup Environment File
-Create the `.env` file from the example template to configure the ROS 2 distro and Docker volumes:
-```bash
-cp .env.example .env
-```
-*(Make sure to verify/edit the environment variables inside `.env` if needed).*
-
 ---
 
 ## Running the Development Container
