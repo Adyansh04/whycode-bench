@@ -1,128 +1,151 @@
-# ROS 2 Compose-First Development Template
+# WhyCode Detection & Triangulation Benchmark
 
-This template is a Compose-first ROS 2 development environment with VS Code Dev Containers on top.
+This repository contains the development environment for the **WhyCode Detection & Triangulation Benchmark**. It packages the main marker detection logic (`whycode_vision`) and the simulation environment (`whycode_sim`) into a Docker Compose runtime environment optimized for ROS 2.
 
-- Docker Compose is the runtime source of truth.
-- `.devcontainer/devcontainer.json` is the VS Code experience layer.
-- Privileged/host-style access is intentionally enabled for local robotics development.
+- **Docker Compose** is the runtime source of truth.
+- **`.devcontainer/devcontainer.json`** provides VS Code integration for developer workspace containment.
+- **NVIDIA GPU Acceleration + X11 GUI forwarding** is pre-configured for local rendering.
 
-## What This Gives You
+---
 
-- Stable in-container paths:
-  - Workspace: `/root/workspace`
-  - Shared data: `/root/data`
-- Small custom Dockerfile layer for project-specific dependencies.
-- GPU + GUI support (NVIDIA + X11).
-- Root-level, single-source tooling config for clangd, clang-format, and Ruff.
+## Setup and Build Instructions
 
-## Prerequisites
+Follow these instructions to clone the parent repository, clone/import dependencies using `vcstool`, and build the workspace.
 
-- Docker Engine and Docker Compose
-- (Optional for GPU) NVIDIA Container Toolkit
-- VS Code with Dev Containers extension
-
-## Single-Point Runtime Config (`.env`)
-
-Copy once, then edit only `.env` for distro/image/container naming knobs:
-
+### 1. Clone the Parent Repository
+Clone this repository and navigate to its root directory on your host machine:
 ```bash
-cp .env.example .env
+git clone git@github.com:Adyansh04/whycode-bench.git
+cd whycode-bench
 ```
 
-Main variables:
-
-- `ROS_DISTRO` (for example: `jazzy`, `humble`)
-- `BASE_IMAGE_REPO`
-- `BASE_IMAGE_TAG_SUFFIX`
-- `DEV_IMAGE_REPO`
-- `CONTAINER_PREFIX`
-- `COMPOSE_PROJECT_NAME`
-
-## Source Repositories (`.repos`)
-
-This template keeps real ROS packages in separate repos and assembles them into `workspace/src` using a manifest file.
-
-1) Edit `workspace.repos` with your repo URLs and branches.
-2) Import sources (run on host or inside the container):
-
+### 2. Import Source Repositories
+This project keeps source packages (`whycode_vision` and `whycode_sim`) in separate repositories. Run the following command on your host machine to clone/import them into the `workspace/src` directory:
 ```bash
+# Install vcstool if you do not have it:
+sudo apt-get update && sudo apt-get install -y python3-vcstool
+
+# Import the repositories:
 vcs import workspace/src < workspace.repos
 ```
 
-To update to the latest branch tips later:
-
+To pull the latest tips for both packages later:
 ```bash
 cd workspace/src
 vcs pull
+cd ../..
 ```
 
-Commits happen inside each repo under `workspace/src`. The template repo only tracks the manifest.
-
-If `vcs` is missing, install once:
-
+### 3. Setup Environment File
+Create the `.env` file from the example template to configure the ROS 2 distro and Docker volumes:
 ```bash
-sudo apt-get install -y python3-vcstool
+cp .env.example .env
 ```
+*(Make sure to verify/edit the environment variables inside `.env` if needed).*
 
-## Daily Workflow (Recommended)
+---
 
-### 1) Start the environment
+## Running the Development Container
 
+We use the helper script `scripts/manage.sh` on the host to manage the container lifecycle.
+
+### 1. Start the Container
+Start the container in detached mode. This command automatically handles display (X11) and GPU configuration permissions:
 ```bash
 ./scripts/manage.sh start
 ```
 
-After startup, the script prints `docker compose ps` so the resolved container name is immediately visible.
-
-### 2) Open in VS Code container
-
-1. Open this repository in VS Code.
-2. Run `Dev Containers: Reopen in Container`.
-3. Work inside `/root/workspace`.
-
-This is the primary flow for consistent extensions and settings.
-
-Fallback: if the service is already running and you prefer attach mode, use `Dev Containers: Attach to Running Container...` and select the container shown by `docker compose ps`.
-
-### 3) Use multiple ROS terminals
-
-Open as many integrated terminals as you need (`Terminal -> New Terminal`), then run:
-
+### 2. Open a Shell inside the Container
+Attach a bash session to the running container:
 ```bash
-source /opt/ros/${ROS_DISTRO}/setup.bash
-[ -f /root/workspace/install/setup.bash ] && source /root/workspace/install/setup.bash
+./scripts/manage.sh exec
 ```
 
-Now each terminal is ready for ROS commands, nodes, launch files, bag tools, and debugging.
+---
 
-### 4) Build
+## Building & Sourcing the Workspace
 
-Use `Ctrl+Shift+B` (task: `colcon build (R)`) or run:
+All ROS 2 builds must be executed **inside the running container** (the environment attached via `./scripts/manage.sh exec`).
 
+### 1. Navigate to the Workspace Directory
+Inside the container, navigate to the ROS 2 workspace:
 ```bash
-source /opt/ros/${ROS_DISTRO}/setup.bash
 cd /root/workspace
+```
+
+### 2. Build the ROS 2 Packages
+Compile the workspace using `colcon`:
+```bash
 colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
-## Compose Runtime Contract
+### 3. Source the Workspace Environment
+Run the setup script to register the built packages:
+```bash
+source /root/workspace/install/setup.bash
+```
 
-`docker-compose.yml` keeps host-oriented robotics access enabled by default:
+---
 
-- `privileged: true`
-- `network_mode: host`
-- `ipc: host`
-- `pid: host`
-- `/dev` bind mount
-- `/tmp/.X11-unix` bind mount
-- NVIDIA GPU reservation
+## Running the Simulation Demo
 
-### Base vs Derived Image
+You can launch the integrated demo containing both the Gazebo world and the WhyCode detector. 
 
-- Base image (upstream): `${BASE_IMAGE_REPO}:${ROS_DISTRO}${BASE_IMAGE_TAG_SUFFIX}`
-- Derived dev image (this repo build): `${DEV_IMAGE_REPO}:${ROS_DISTRO}`
+### 1. Launch Options
+Inside the container (after sourcing the workspace), run the launch file. We have exposed launch arguments to configure the run dynamically:
 
-The derived image is built using `.devcontainer/Dockerfile` and is where you add project-specific dependencies.
+#### Option A: Headless Mode (Recommended for Performance, solid 30 FPS)
+This runs Gazebo with headless rendering, using EGL GPU acceleration for the camera:
+```bash
+ros2 launch whycode_vision whycode_demo.launch.py gui:=false
+```
+
+#### Option B: GUI Mode
+This launches the full Gazebo Harmonic user interface window:
+```bash
+ros2 launch whycode_vision whycode_demo.launch.py gui:=true
+```
+
+#### Option C: Change World or Configuration
+You can specify which Gazebo world to load (e.g. `whycode_1.world`, `whycode_2.world`, `whycode_3.world`, `docking.world`):
+```bash
+ros2 launch whycode_vision whycode_demo.launch.py world:=whycode_3.world gui:=true
+```
+
+#### Supported Launch Arguments:
+* `world` (default: `whycode_2.world`): World file to load.
+* `gui` (default: `true`): Launch Gazebo GUI (`true`/`false`).
+* `image_view` (default: `true`): Launch `image_view` node to show result stream (`true`/`false`).
+* `use_composition` (default: `false`): Use composable node container for WhyCon.
+* `config_file` (default: default sim config): Path to custom WhyCon detector parameters YAML file.
+
+### 2. Monitoring Outputs
+Open a separate terminal inside the container (`./scripts/manage.sh exec`) and source `/root/workspace/install/setup.bash`:
+* **Echo WhyCode poses:**
+  ```bash
+  ros2 topic echo /whycon/poses
+  ```
+* **Run Rqt Image View manually:**
+  ```bash
+  ros2 run rqt_image_view rqt_image_view
+  ```
+
+---
+
+## Environment Management (`manage.sh`)
+
+Use the helper script `scripts/manage.sh` to manage the container lifecycle:
+
+```bash
+./scripts/manage.sh start     # Build and start the container in detached mode
+./scripts/manage.sh stop      # Stop the running container
+./scripts/manage.sh restart   # Restart the container
+./scripts/manage.sh recreate  # Rebuild and recreate the container from scratch
+./scripts/manage.sh logs      # Follow container logs (stdout/stderr)
+./scripts/manage.sh exec      # Open a bash terminal inside the container
+```
+
+---
 
 ## Mounts
 
@@ -138,100 +161,26 @@ The derived image is built using `.devcontainer/Dockerfile` and is where you add
 | `/dev` | `/dev` | Hardware device access |
 | `/tmp/.X11-unix` | `/tmp/.X11-unix` | GUI socket |
 
-## Dev Container Behavior
+---
 
-`.devcontainer/devcontainer.json` is configured to:
+## Tooling & Formatters
 
-- Use Compose service `ros-dev`
-- Open `/root/workspace`
-- Start required service(s)
-- Keep container running when VS Code closes (`"shutdownAction": "none"`)
-- Auto-install recommended extensions in the container
+- **C++:** Formatting uses `clang-format` based on the local `.clang-format` file. Language server support is managed by `clangd` using the exported `compile_commands.json`.
+- **Python:** Linting and formatting is managed by Ruff using `/root/workspace/ruff.toml`.
+- **Manual Formatting:** Trigger formatting manually using `Format Document` (`Ctrl+Shift+I`) inside VS Code.
 
-## Tooling Setup
-
-### C++
-
-- `clangd` is the primary language server.
-- `C_Cpp.intelliSenseEngine` is disabled to avoid dual-diagnostics conflicts.
-- C/C++ formatting uses the `xaver.clang-format` VS Code extension + `.clang-format`.
-- Format-on-save is intentionally disabled.
-- Manual formatting: `Format Document` (`Ctrl+Shift+I` on Linux).
-- Build task exports `compile_commands.json` for accurate indexing.
-
-### Python
-
-- Ruff is the default formatter.
-- Format-on-save is intentionally disabled.
-- Manual formatting: `Format Document` (`Ctrl+Shift+I` on Linux).
-- Ruff fix/import actions are available manually from code actions / command palette.
-- `ruff.toml` uses `src`-based detection for first-party import resolution:
-  - `src = ["workspace/src", "src"]`
-
-## Management Script
-
-Use `scripts/manage.sh` for lifecycle operations:
-
-```bash
-./scripts/manage.sh start
-./scripts/manage.sh stop
-./scripts/manage.sh restart
-./scripts/manage.sh recreate
-./scripts/manage.sh logs
-./scripts/manage.sh exec
-```
-
-`exec` uses Compose service targeting (`docker compose exec ros-dev bash`), so it stays consistent across ROS distro changes via environment or `.env`.
-`start` and `recreate` also print `docker compose ps` to show the active container name and state.
-
-## Dockerfile Customization
-
-Add project dependencies to `.devcontainer/Dockerfile` (this derived layer), then rebuild:
-
-```bash
-./scripts/manage.sh recreate
-```
-
-## Data Folder Usage
-
-Anything in `./data` on host is available at `/root/data` in container.
-
-Example:
-
-```bash
-cp ~/Downloads/my_recording.db3 ./data/
-```
-
-Inside container:
-
-```bash
-ros2 bag play /root/data/my_recording.db3
-```
-
-## Debug Launch Template
-
-`.vscode/launch.json` includes a template launch entry. Replace:
-
-- `src/<your_package>/launch/<your_launch_file>.launch.py`
-
-with your package-specific launch file path.
+---
 
 ## Troubleshooting
 
-### GUI apps do not open
-
+### GUI Apps do not open
+If rqt or Gazebo GUI fails to open with display errors on host:
 ```bash
 xhost +local:docker
 ```
 
-### GPU not visible
-
+### Rebuilding container after Dockerfile changes
+If you modify `.devcontainer/Dockerfile` or add system libraries, recreate the container:
 ```bash
-docker run --rm --gpus all nvidia/cuda:12.0.0-base-ubuntu22.04 nvidia-smi
-```
-
-### Validate Compose config
-
-```bash
-docker compose config
+./scripts/manage.sh recreate
 ```

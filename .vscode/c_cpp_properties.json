@@ -4,7 +4,7 @@
             "name": "ROS",
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
-            "cppStandard": "c++17",
+            "cppStandard": "c++20",
             "intelliSenseMode": "linux-gcc-x64",
             "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "includePath": [
@@ -12,7 +12,8 @@
                 "${workspaceFolder}/install/include/**",
                 "/opt/ros/${env:ROS_DISTRO}/include/**",
                 "/usr/include",
-                "/usr/local/include"
+                "/usr/local/include",
+                "{workspaceFolder}/workspace/install/include/**"
             ],
             "defines": [
                 "ROS_DISTRO=${env:ROS_DISTRO}"

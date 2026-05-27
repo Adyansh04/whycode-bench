@@ -1,13 +1,11 @@
 repositories:
-  repo1:
+  whycode_sim:
     type: git
-    url: https://github.com/example-org/repo1.git
-    version: main
-  repo2:
+    url: git@github.com:Adyansh04/whycode-sim.git
+    version: jazzy-harmonic
+    local-name: whycode_sim
+  whycode:
     type: git
-    url: https://github.com/example-org/repo2.git
+    url: git@github.com:Adyansh04/whycode.git
     version: main
-  repo3:
-    type: git
-    url: https://github.com/example-org/repo3.git
-    version: main
+    local-name: whycode_vision

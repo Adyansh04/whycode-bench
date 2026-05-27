@@ -68,10 +68,13 @@ services:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [gpu, compute, utility, graphics, display]
 
     # GUI environment
     environment:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
       - ROS_DISTRO=${ROS_DISTRO:-jazzy}
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - __GLX_VENDOR_LIBRARY_NAME=nvidia
+      - __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json
