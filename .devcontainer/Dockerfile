@@ -38,6 +38,8 @@ RUN apt-get update && apt-get install -y clangd-14 clang-format-14 && \
 #
 # ============================================================================
 
+RUN pip uninstall -y em && rm -rf /usr/local/lib/python3.12/dist-packages/em.py /usr/local/lib/python3.12/dist-packages/empy*
+
 # Ensure default workspace exists (mounted from host: ./workspace -> /root/workspace)
 RUN mkdir -p /root/workspace/src
 RUN mkdir -p /root/data/
