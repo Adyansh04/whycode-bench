@@ -79,48 +79,19 @@ source /root/workspace/install/setup.bash
 
 ---
 
-## Running the Simulation Demo
+## Running the Simulation
 
-You can launch the integrated demo containing both the Gazebo world and the WhyCode detector. 
+The simulation runs in a second container, the stock Isaac Sim 6.2.0.1 image, which publishes the
+camera, odometry, TF and marker ground truth to the ROS container. Build the workspace first:
+Isaac loads `whycode_sim_msgs` from it. The first start streams about 20 GB of assets (20-40 min).
 
-### 1. Launch Options
-Inside the container (after sourcing the workspace), run the launch file. We have exposed launch arguments to configure the run dynamically:
-
-#### Option A: Headless Mode (Recommended for Performance, solid 30 FPS)
-This runs Gazebo with headless rendering, using EGL GPU acceleration for the camera:
 ```bash
-ros2 launch whycode_vision whycode_demo.launch.py gui:=false
+./scripts/manage.sh start isaac
 ```
 
-#### Option B: GUI Mode
-This launches the full Gazebo Harmonic user interface window:
-```bash
-ros2 launch whycode_vision whycode_demo.launch.py gui:=true
-```
-
-#### Option C: Change World or Configuration
-You can specify which Gazebo world to load (e.g. `whycode_1.world`, `whycode_2.world`, `whycode_3.world`, `docking.world`):
-```bash
-ros2 launch whycode_vision whycode_demo.launch.py world:=whycode_3.world gui:=true
-```
-
-#### Supported Launch Arguments:
-* `world` (default: `whycode_2.world`): World file to load.
-* `gui` (default: `true`): Launch Gazebo GUI (`true`/`false`).
-* `image_view` (default: `true`): Launch `image_view` node to show result stream (`true`/`false`).
-* `use_composition` (default: `false`): Use composable node container for WhyCon.
-* `config_file` (default: default sim config): Path to custom WhyCon detector parameters YAML file.
-
-### 2. Monitoring Outputs
-Open a separate terminal inside the container (`./scripts/manage.sh exec`) and source `/root/workspace/install/setup.bash`:
-* **Echo WhyCode poses:**
-  ```bash
-  ros2 topic echo /whycon/poses
-  ```
-* **Run Rqt Image View manually:**
-  ```bash
-  ros2 run rqt_image_view rqt_image_view
-  ```
+Recording and replaying bags, the paths and the recorded bags are described in the
+[whycode_sim README](https://github.com/Adyansh04/whycode-sim/tree/isaac-sim#readme). Run
+`./scripts/manage.sh clean` before replaying a bag: it stops the sim and every ROS process.
 
 ---
 
@@ -135,7 +106,11 @@ Use the helper script `scripts/manage.sh` to manage the container lifecycle:
 ./scripts/manage.sh recreate  # Rebuild and recreate the container from scratch
 ./scripts/manage.sh logs      # Follow container logs (stdout/stderr)
 ./scripts/manage.sh exec      # Open a bash terminal inside the container
+./scripts/manage.sh clean     # Stop the sim and every ROS process, then check the graph is empty
 ```
+
+Add `isaac` to `start`, `stop`, `restart`, `recreate`, `logs` or `exec` to act on the Isaac Sim
+container instead, e.g. `./scripts/manage.sh exec isaac`.
 
 ---
 
@@ -166,7 +141,7 @@ Use the helper script `scripts/manage.sh` to manage the container lifecycle:
 ## Troubleshooting
 
 ### GUI Apps do not open
-If rqt or Gazebo GUI fails to open with display errors on host:
+If rqt or RViz fails to open with display errors on host:
 ```bash
 xhost +local:docker
 ```
