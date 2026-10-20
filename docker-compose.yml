@@ -44,6 +44,10 @@ services:
         source: ./data
         target: /root/data
       - type: bind
+        source: ./fastdds.xml
+        target: /root/fastdds.xml
+        read_only: true
+      - type: bind
         source: /dev
         target: /dev
       - type: bind
@@ -81,6 +85,7 @@ services:
       - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
       - GROVE_G1_ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
       - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
+      - FASTRTPS_DEFAULT_PROFILES_FILE=/root/fastdds.xml
       - NVIDIA_DRIVER_CAPABILITIES=all
       - __GLX_VENDOR_LIBRARY_NAME=nvidia
       - __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json
@@ -115,6 +120,7 @@ services:
       - OMNI_KIT_ACCEPT_EULA=YES
       - ROS_DISTRO=${ROS_DISTRO:-jazzy}
       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - FASTRTPS_DEFAULT_PROFILES_FILE=/root/fastdds.xml
       - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
       - ISAAC_HEADLESS=${ISAAC_HEADLESS:-1}
       - SCENE_CONFIG=${SCENE_CONFIG:-/root/workspace/src/whycode_sim/whycode_sim/config/scene.yaml}
@@ -130,6 +136,10 @@ services:
       - type: bind
         source: ./data
         target: /root/data
+      - type: bind
+        source: ./fastdds.xml
+        target: /root/fastdds.xml
+        read_only: true
       - type: bind
         source: /tmp/.X11-unix
         target: /tmp/.X11-unix
