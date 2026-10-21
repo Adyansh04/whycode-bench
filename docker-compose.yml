@@ -44,6 +44,10 @@ services:
         source: ./data
         target: /root/data
       - type: bind
+        source: ./fastdds.xml
+        target: /root/fastdds.xml
+        read_only: true
+      - type: bind
         source: /dev
         target: /dev
       - type: bind
@@ -75,6 +79,102 @@ services:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
       - ROS_DISTRO=${ROS_DISTRO:-jazzy}
+      # Must match the isaac service or the containers cannot discover each other. The
+      # base image's /etc/profile.d/99-grove-g1-env.sh re-exports ROS_DOMAIN_ID from
+      # GROVE_G1_ROS_DOMAIN_ID in login shells, so both are set from the same value.
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - GROVE_G1_ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - RMW_IMPLEMENTATION=${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
+      - FASTRTPS_DEFAULT_PROFILES_FILE=/root/fastdds.xml
       - NVIDIA_DRIVER_CAPABILITIES=all
       - __GLX_VENDOR_LIBRARY_NAME=nvidia
       - __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json
+
+  isaac:
+    # Stock NVIDIA image, unmodified. Everything project-specific arrives through
+    # the ./workspace bind mount and SCENE_CONFIG.
+    image: nvcr.io/nvidia/isaac-sim:${ISAAC_SIM_VERSION:-6.2.0.1}
+
+    # Kept out of a bare `docker compose up`; use ./scripts/manage.sh start isaac.
+    profiles: ["isaac"]
+
+    container_name: ${CONTAINER_PREFIX:-ros_dev}_isaac
+
+    # The image ships a non-root `isaac-sim` user, but ./workspace is root-owned
+    # because ros-dev builds it as root. Overriding here keeps the image stock.
+    user: root
+
+    # Stock entrypoint is runheadless.sh, which would launch the default app.
+    entrypoint: ["/bin/bash", "/root/workspace/src/whycode_sim/whycode_sim/scripts/isaac_entrypoint.sh"]
+
+    tty: true
+    stdin_open: true
+
+    # Shares the DDS domain with ros-dev; ipc:host enables FastDDS shared memory.
+    network_mode: "host"
+    ipc: host
+
+    environment:
+      - ACCEPT_EULA=Y
+      - PRIVACY_CONSENT=Y
+      - OMNI_KIT_ACCEPT_EULA=YES
+      - ROS_DISTRO=${ROS_DISTRO:-jazzy}
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - FASTRTPS_DEFAULT_PROFILES_FILE=/root/fastdds.xml
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - ISAAC_HEADLESS=${ISAAC_HEADLESS:-1}
+      - SCENE_CONFIG=${SCENE_CONFIG:-/root/workspace/src/whycode_sim/whycode_sim/config/scene.yaml}
+      - DISPLAY=${DISPLAY}
+
+    volumes:
+      # Same target path as ros-dev so the shared geometry/config modules resolve
+      # identically in both containers.
+      - type: bind
+        source: ./workspace
+        target: /root/workspace
+        read_only: false
+      - type: bind
+        source: ./data
+        target: /root/data
+      - type: bind
+        source: ./fastdds.xml
+        target: /root/fastdds.xml
+        read_only: true
+      - type: bind
+        source: /tmp/.X11-unix
+        target: /tmp/.X11-unix
+        read_only: false
+
+      # External volumes: the ~20 GB of streamed assets and compiled shader cache.
+      # Declared external so Compose does not namespace them per project and any
+      # other project can attach the same caches by name.
+      - isaac-sim-cache-kit:/isaac-sim/kit/cache
+      - isaac-sim-cache-ov:/root/.cache/ov
+      - isaac-sim-cache-pip:/root/.cache/pip
+      - isaac-sim-cache-glcache:/root/.cache/nvidia/GLCache
+      - isaac-sim-cache-compute:/root/.nv/ComputeCache
+      - isaac-sim-cache-hub:/var/cache/hub
+      - isaac-sim-logs:/root/.nvidia-omniverse/logs
+      - isaac-sim-config:/root/.nvidia-omniverse/config
+      - isaac-sim-data:/root/.local/share/ov/data
+      - isaac-sim-documents:/root/Documents
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility, graphics, display]
+
+volumes:
+  isaac-sim-cache-kit:     { external: true }
+  isaac-sim-cache-ov:      { external: true }
+  isaac-sim-cache-pip:     { external: true }
+  isaac-sim-cache-glcache: { external: true }
+  isaac-sim-cache-compute: { external: true }
+  isaac-sim-cache-hub:     { external: true }
+  isaac-sim-logs:          { external: true }
+  isaac-sim-config:        { external: true }
+  isaac-sim-data:          { external: true }
+  isaac-sim-documents:     { external: true }

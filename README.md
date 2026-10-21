@@ -10,31 +10,30 @@ This repository contains the development environment for the **WhyCode Detection
 
 ## Setup and Build Instructions
 
-Follow these instructions to clone the parent repository, clone/import dependencies using `vcstool`, and build the workspace.
+Follow these instructions to clone the repository with its two packages and build the workspace.
 
-### 1. Clone the Parent Repository
-Clone this repository and navigate to its root directory on your host machine:
+### 1. Clone the Repository
+The packages, `whycode_vision` and `whycode_sim`, are git submodules in `workspace/src`. Clone them
+along with this repository:
 ```bash
-git clone git@github.com:Adyansh04/whycode-bench.git
+git clone --recurse-submodules git@github.com:Adyansh04/whycode-bench.git
 cd whycode-bench
 ```
 
-### 2. Import Source Repositories
-This project keeps source packages (`whycode_vision` and `whycode_sim`) in separate repositories. Run the following command on your host machine to clone/import them into the `workspace/src` directory:
-```bash
-# Install vcstool if you do not have it:
-sudo apt-get update && sudo apt-get install -y python3-vcstool
+In a clone made without them: `git submodule update --init`.
 
-# Import the repositories:
-vcs import workspace/src < workspace.repos
+### 2. Updating the Packages
+The bench pins each package to a commit. To move both to their branch tips (`main` for
+whycode_vision, `isaac-sim` for whycode_sim) and record that:
+```bash
+git submodule update --remote
+git add workspace/src/whycode_vision workspace/src/whycode_sim
+git commit -m "chore: update the packages"
 ```
 
-To pull the latest tips for both packages later:
-```bash
-cd workspace/src
-vcs pull
-cd ../..
-```
+Run git on the host: the containers mount only `./workspace`, and a fresh clone keeps the packages'
+git data in this repository's `.git/modules`.
+
 ---
 
 ## Running the Development Container
@@ -79,48 +78,27 @@ source /root/workspace/install/setup.bash
 
 ---
 
-## Running the Simulation Demo
+## Running the Simulation
 
-You can launch the integrated demo containing both the Gazebo world and the WhyCode detector. 
+The simulation runs in a second container, the stock Isaac Sim 6.2.0.1 image, which publishes the
+camera, odometry, TF and marker ground truth to the ROS container. Build the workspace first:
+Isaac loads `whycode_sim_msgs` from it. The first start streams about 20 GB of assets (20-40 min).
 
-### 1. Launch Options
-Inside the container (after sourcing the workspace), run the launch file. We have exposed launch arguments to configure the run dynamically:
-
-#### Option A: Headless Mode (Recommended for Performance, solid 30 FPS)
-This runs Gazebo with headless rendering, using EGL GPU acceleration for the camera:
 ```bash
-ros2 launch whycode_vision whycode_demo.launch.py gui:=false
+./scripts/manage.sh start isaac
 ```
 
-#### Option B: GUI Mode
-This launches the full Gazebo Harmonic user interface window:
+Recording and replaying bags, the paths and the recorded bags are described in the
+[whycode_sim README](https://github.com/Adyansh04/whycode-sim/tree/isaac-sim#readme). Run
+`./scripts/manage.sh clean` before replaying a bag: it stops the sim and every ROS process.
+
+The recorded bags (WhyCode and AprilTag; one lap of each path, and three laps at rising speeds) are
+on [Hugging Face](https://huggingface.co/datasets/Adyansh/Whycode-isaac-bag). Unpack them into
+`./data`, where the containers see them as `/root/data/<bag>`:
+
 ```bash
-ros2 launch whycode_vision whycode_demo.launch.py gui:=true
+unzip whycode_bench_bags.zip -d data && mv data/whycode_bench_bags/* data/
 ```
-
-#### Option C: Change World or Configuration
-You can specify which Gazebo world to load (e.g. `whycode_1.world`, `whycode_2.world`, `whycode_3.world`, `docking.world`):
-```bash
-ros2 launch whycode_vision whycode_demo.launch.py world:=whycode_3.world gui:=true
-```
-
-#### Supported Launch Arguments:
-* `world` (default: `whycode_2.world`): World file to load.
-* `gui` (default: `true`): Launch Gazebo GUI (`true`/`false`).
-* `image_view` (default: `true`): Launch `image_view` node to show result stream (`true`/`false`).
-* `use_composition` (default: `false`): Use composable node container for WhyCon.
-* `config_file` (default: default sim config): Path to custom WhyCon detector parameters YAML file.
-
-### 2. Monitoring Outputs
-Open a separate terminal inside the container (`./scripts/manage.sh exec`) and source `/root/workspace/install/setup.bash`:
-* **Echo WhyCode poses:**
-  ```bash
-  ros2 topic echo /whycon/poses
-  ```
-* **Run Rqt Image View manually:**
-  ```bash
-  ros2 run rqt_image_view rqt_image_view
-  ```
 
 ---
 
@@ -135,7 +113,11 @@ Use the helper script `scripts/manage.sh` to manage the container lifecycle:
 ./scripts/manage.sh recreate  # Rebuild and recreate the container from scratch
 ./scripts/manage.sh logs      # Follow container logs (stdout/stderr)
 ./scripts/manage.sh exec      # Open a bash terminal inside the container
+./scripts/manage.sh clean     # Stop the sim and every ROS process, then check the graph is empty
 ```
+
+Add `isaac` to `start`, `stop`, `restart`, `recreate`, `logs` or `exec` to act on the Isaac Sim
+container instead, e.g. `./scripts/manage.sh exec isaac`.
 
 ---
 
@@ -166,7 +148,7 @@ Use the helper script `scripts/manage.sh` to manage the container lifecycle:
 ## Troubleshooting
 
 ### GUI Apps do not open
-If rqt or Gazebo GUI fails to open with display errors on host:
+If rqt or RViz fails to open with display errors on host:
 ```bash
 xhost +local:docker
 ```

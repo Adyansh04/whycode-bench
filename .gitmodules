@@ -1,0 +1,8 @@
+[submodule "workspace/src/whycode_vision"]
+	path = workspace/src/whycode_vision
+	url = git@github.com:Adyansh04/whycode.git
+	branch = main
+[submodule "workspace/src/whycode_sim"]
+	path = workspace/src/whycode_sim
+	url = git@github.com:Adyansh04/whycode-sim.git
+	branch = isaac-sim

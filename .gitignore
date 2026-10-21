@@ -7,10 +7,6 @@ workspace/.clang-format
 workspace/.clangd
 workspace/ruff.toml
 
-# Keep source directory structure
-!workspace/src/
-!workspace/src/.gitkeep
-
 
 # Python
 __pycache__/
