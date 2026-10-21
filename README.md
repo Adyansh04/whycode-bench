@@ -35,12 +35,15 @@ whycode_vision, `isaac-sim` for whycode_sim). Run git on the host.
 
 ## Bags
 
-The recorded loop bags are on
-[Hugging Face](https://huggingface.co/datasets/Adyansh/Whycode-isaac-bag). Unpack them into
-`./data`, which the containers see as `/root/data`:
+The bags are on [Hugging Face](https://huggingface.co/datasets/Adyansh/Whycode-isaac-bag): the
+loop bags in `whycode_bench_bags.zip`, and the benchmark's range, viewing-angle, loop and demo bags
+as folders under `benchmark_bags/`. They go in `./data`, which the containers see as `/root/data`:
 
 ```bash
 unzip whycode_bench_bags.zip -d data && mv data/whycode_bench_bags/* data/
+mv data/apriltag_1lap data/apriltag_1lap_tag016      # the zip's has 0.16 m tags
+hf download Adyansh/Whycode-isaac-bag --repo-type dataset --include "benchmark_bags/*" --local-dir data
+mv data/benchmark_bags/* data/
 ```
 
 To record your own, start the simulation and follow
