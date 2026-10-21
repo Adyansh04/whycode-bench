@@ -167,6 +167,40 @@ services:
               count: all
               capabilities: [gpu, compute, utility, graphics, display]
 
+  isaac-ros:
+    # NVIDIA's GPU AprilTag detector, for the benchmark's comparison only:
+    #   docker compose --profile isaac-ros run --rm isaac-ros <command>
+    profiles: ["isaac-ros"]
+    build:
+      context: .devcontainer
+      dockerfile: isaac_ros.Dockerfile
+    image: whycode-bench/isaac-ros:4.0
+    network_mode: "host"
+    ipc: host
+    environment:
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - FASTRTPS_DEFAULT_PROFILES_FILE=/root/fastdds.xml
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    volumes:
+      - type: bind
+        source: ./workspace
+        target: /root/workspace
+      - type: bind
+        source: ./data
+        target: /root/data
+      - type: bind
+        source: ./fastdds.xml
+        target: /root/fastdds.xml
+        read_only: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, compute, utility]
+
 volumes:
   isaac-sim-cache-kit:     { external: true }
   isaac-sim-cache-ov:      { external: true }

@@ -100,6 +100,24 @@ on [Hugging Face](https://huggingface.co/datasets/Adyansh/Whycode-isaac-bag). Un
 unzip whycode_bench_bags.zip -d data && mv data/whycode_bench_bags/* data/
 ```
 
+## Benchmark
+
+`scripts/benchmark.sh` records the comparison bags and scores every detector on them: WhyCode,
+WhyCon, AprilTag 3 (`apriltag_ros`, at half and full resolution), NVIDIA's GPU AprilTag detector
+(Isaac ROS, in its own `isaac-ros` container) and OpenCV's ArUco on the same AprilTag markers.
+
+```bash
+./scripts/benchmark.sh record      # the range, viewing-angle and loop bags, one Isaac run at a time
+./scripts/benchmark.sh evaluate    # each detector on each bag, against the ground truth
+./scripts/benchmark.sh report      # plots, tables and an at-a-glance summary.svg in data/benchmark
+```
+
+Each step takes names to run part of it, such as `evaluate whycon` or `record range_whycode_640`.
+CPU is measured with only the poses published: WhyCode's `/whycon/poses`, without its image,
+debug, TF or RViz output; the tag detectors' poses, which they publish on `/tf` only. Each
+detector replays a bag slowly enough to take every frame. Isaac ROS needs an NVIDIA driver 580 or
+newer for its CUDA 13 build.
+
 ---
 
 ## Environment Management (`manage.sh`)
