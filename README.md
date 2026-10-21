@@ -100,6 +100,27 @@ on [Hugging Face](https://huggingface.co/datasets/Adyansh/Whycode-isaac-bag). Un
 unzip whycode_bench_bags.zip -d data && mv data/whycode_bench_bags/* data/
 ```
 
+## Demo
+
+`scripts/demos/whycode.sh` opens a demo's commands at once, in split panes of one tilix window (a
+window each in other terminals): the detector's launch on the left, RViz and the rest stacked on
+the right.
+
+```bash
+./scripts/benchmark.sh record demo_1lap           # once: the loop bag with Isaac Sim's chase camera
+./scripts/demos/whycode.sh replay                 # that bag, played in its own pane
+./scripts/demos/whycode.sh replay bag:=/root/data/whycode_1lap config_file:=...
+./scripts/demos/whycode.sh sim                    # Isaac Sim live, its viewer following the robot
+./scripts/demos/whycode.sh stop                   # end whichever demo is running
+./scripts/demos/whycode.sh replay --print         # list the commands instead
+```
+
+In the bag's pane, space pauses the playback and the arrow keys step it and change its rate. RViz
+(`whycode_sim/config/demo.rviz`, laid out for a maximized window on a screen 1600 px tall) shows
+the annotated image, the detections over the ground truth, the three debug panels and Isaac Sim's
+view of the robot, which only a bag recorded with the chase camera carries. RViz's full screen
+(F11) hides every panel but the 3D view.
+
 ## Benchmark
 
 `scripts/benchmark.sh` records the comparison bags and scores every detector on them: WhyCode,
