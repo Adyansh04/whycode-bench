@@ -93,6 +93,14 @@ Recording and replaying bags, the paths and the recorded bags are described in t
 [whycode_sim README](https://github.com/Adyansh04/whycode-sim/tree/isaac-sim#readme). Run
 `./scripts/manage.sh clean` before replaying a bag: it stops the sim and every ROS process.
 
+The recorded bags (WhyCode and AprilTag; one lap of each path, and three laps at rising speeds) are
+on [Hugging Face](https://huggingface.co/datasets/Adyansh/Whycode-isaac-bag). Unpack them into
+`./data`, where the containers see them as `/root/data/<bag>`:
+
+```bash
+unzip whycode_bench_bags.zip -d data && mv data/whycode_bench_bags/* data/
+```
+
 ---
 
 ## Environment Management (`manage.sh`)
