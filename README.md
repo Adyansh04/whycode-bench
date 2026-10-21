@@ -10,31 +10,30 @@ This repository contains the development environment for the **WhyCode Detection
 
 ## Setup and Build Instructions
 
-Follow these instructions to clone the parent repository, clone/import dependencies using `vcstool`, and build the workspace.
+Follow these instructions to clone the repository with its two packages and build the workspace.
 
-### 1. Clone the Parent Repository
-Clone this repository and navigate to its root directory on your host machine:
+### 1. Clone the Repository
+The packages, `whycode_vision` and `whycode_sim`, are git submodules in `workspace/src`. Clone them
+along with this repository:
 ```bash
-git clone git@github.com:Adyansh04/whycode-bench.git
+git clone --recurse-submodules git@github.com:Adyansh04/whycode-bench.git
 cd whycode-bench
 ```
 
-### 2. Import Source Repositories
-This project keeps source packages (`whycode_vision` and `whycode_sim`) in separate repositories. Run the following command on your host machine to clone/import them into the `workspace/src` directory:
-```bash
-# Install vcstool if you do not have it:
-sudo apt-get update && sudo apt-get install -y python3-vcstool
+In a clone made without them: `git submodule update --init`.
 
-# Import the repositories:
-vcs import workspace/src < workspace.repos
+### 2. Updating the Packages
+The bench pins each package to a commit. To move both to their branch tips (`main` for
+whycode_vision, `isaac-sim` for whycode_sim) and record that:
+```bash
+git submodule update --remote
+git add workspace/src/whycode_vision workspace/src/whycode_sim
+git commit -m "chore: update the packages"
 ```
 
-To pull the latest tips for both packages later:
-```bash
-cd workspace/src
-vcs pull
-cd ../..
-```
+Run git on the host: the containers mount only `./workspace`, and a fresh clone keeps the packages'
+git data in this repository's `.git/modules`.
+
 ---
 
 ## Running the Development Container
