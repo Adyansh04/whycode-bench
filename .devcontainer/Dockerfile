@@ -38,6 +38,14 @@ RUN apt-get update && apt-get install -y clangd-14 clang-format-14 && \
 #
 # ============================================================================
 
+# The AprilTag detector the benchmark compares WhyCode against (AprilTag 3, apriltag_ros), and
+# matplotlib for its plots: the apt build is compiled against NumPy 1 and fails on the image's 2
+RUN apt-get update && apt-get install -y \
+    ros-${ROS_DISTRO}-apriltag-ros \
+    ros-${ROS_DISTRO}-apriltag-msgs \
+    && rm -rf /var/lib/apt/lists/* && \
+    python3 -m pip install --no-cache-dir --ignore-installed matplotlib
+
 RUN pip uninstall -y em && rm -rf /usr/local/lib/python3.12/dist-packages/em.py /usr/local/lib/python3.12/dist-packages/empy*
 
 # Ensure default workspace exists (mounted from host: ./workspace -> /root/workspace)
